@@ -4,6 +4,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 class User(Base):
+    """Represent a registered FinanceTracker user.
+
+    Attributes:
+        id (int): Unique user identifier.
+        name (str): User's display name.
+        email (str): Unique email address.
+        hashed_password (str): Securely hashed user password.
+    """
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(

@@ -30,3 +30,7 @@ dist/
 
 # Local database files
 *.sqlite3
+
+.coverage
+.coverage.*
+htmlcov/

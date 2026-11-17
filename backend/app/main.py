@@ -10,12 +10,16 @@ from app.models.user import User
 from app.schemas.user import UserResponse
 from app.schemas.user import UserCreate
 from app.security import hash_password
+from app.routers.auth import router as auth_router
+from app.dependencies import get_current_user
 
 app = FastAPI(
     title="Finance Tracker API",
     description="REST API for personal finance management",
     version="1.0.0",
 )
+
+app.include_router(auth_router)
 
 @app.get("/")
 async def root() -> dict[str,str]:
@@ -30,20 +34,36 @@ async def hello(name: str) -> dict[str,str]:
     hello_message = f"Hello, {name}!"
     return {"message": hello_message}
 
+@app.get("/users/me", response_model=UserResponse)
+def read_current_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    return current_user
+
 @app.get("/users/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
-    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ) -> User:
-    user = db.get(User, user_id)
+    """Return the authenticated user's profile by ID.
 
-    if user is None:
+    Args:
+        user_id (int): Requested user identifier.
+        current_user (User): Authenticated user.
+
+    Returns:
+        User: Profile of the authenticated user.
+
+    Raises:
+        HTTPException: If access to the requested profile is forbidden.
+    """
+    if current_user.id != user_id:
         raise HTTPException(
-            status_code=404,
-            detail="User not found",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden",
         )
 
-    return user
+    return current_user
 
 @app.post(
     "/users",
