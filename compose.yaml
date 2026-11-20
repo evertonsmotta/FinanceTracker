@@ -15,5 +15,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  db_test:
+    image: postgres:17
+    container_name: financetracker-db-test
+    restart: "no"
+    environment:
+      POSTGRES_USER: financetracker_test
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:?Set POSTGRES_TEST_PASSWORD}
+      POSTGRES_DB: financetracker_test
+    ports:
+      - "127.0.0.1:5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U financetracker_test -d financetracker_test
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:

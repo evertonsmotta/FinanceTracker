@@ -1,7 +1,9 @@
+import os
+
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy.engine import make_url
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
@@ -11,7 +13,34 @@ from app.models.user import User
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+
+database_target = context.get_x_argument(
+    as_dictionary=True
+).get("db")
+
+if database_target == "test":
+    database_url = os.environ["DATABASE_TEST_URL"]
+
+    parsed_url = make_url(database_url)
+
+    if (
+        parsed_url.database != "financetracker_test"
+        or parsed_url.host not in {"127.0.0.1", "localhost"}
+        or parsed_url.port != 5433
+    ):
+        raise RuntimeError(
+            "Alembic test migrations must target financetracker_test."
+        )
+
+elif database_target is None:
+    database_url = DATABASE_URL
+
+else:
+    raise ValueError(
+        f"Unknown database target: {database_target}"
+    )
+
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
